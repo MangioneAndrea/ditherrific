@@ -1,0 +1,26 @@
+[package]
+name = "ditherrific"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+image = { version = "0.25.1", optional = true }
+clap = { version = "4.5.4", optional = true, features = ["derive"] }
+clio = { version = "0.3.5", features = ["clap", "clap-parse"], optional = true }
+wasm-bindgen = { version = "0.2", optional = true }
+js-sys = { version = "0.3", optional = true }
+web-sys = { version = "0.3", optional = true }
+
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:clio", "dep:image"]
+web = ["dep:wasm-bindgen", "dep:js-sys", "dep:web-sys"]
+
+[[bin]]
+name = "cli"
+test = false
+bench = false
+required-features = ["cli"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]

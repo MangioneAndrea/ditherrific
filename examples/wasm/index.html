@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ditherrific showcase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+	    display: flex;
+        }
+
+	body > * {
+	    width: 30%;
+	    border: solid 1px black;
+	    flex-grow: 1;
+	    margin: 2%;
+	}
+	div > * {
+		width: 100%;
+		margin-bottom: 10px;
+	}
+
+	input {
+		display:none;
+	}
+    </style>
+</head>
+<body>
+
+
+	<div>
+		<label>Algorithm</label>
+		<select id="options">
+		</select>
+		<button id="btn">Convert</button>
+	</div>
+	<img id="src" alt="Src: (click to select)"><input type="file"/></img>
+    <canvas id="res"/>
+    
+
+    <script type="module" src="./index.js">
+    </script>
+
+</body>
+</html>
