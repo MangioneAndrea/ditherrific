@@ -1,0 +1,62 @@
+name: Build and Publish 
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    # - name: Add rust targets
+    #   run: |
+    #     rustup target add x86_64-apple-darwin
+    #     rustup target add x86_64-pc-windows-msvc
+    - name: Build linux
+      run: cargo build --release --bin cli --target x86_64-unknown-linux-gnu
+    # - name: Build mac 
+    #   run: cargo build --release --bin cli --target x86_64-apple-darwin
+    # - name: Build windows 
+    #   run: cargo build --release --bin cli --target x86_64-pc-windows-msvc
+    - name: Run tests
+      run: cargo test
+    - name: Download wasm pack
+      uses: jetli/wasm-pack-action@v0.4.0
+      with:
+          version: 'latest'
+    - name: Build wasm
+      run: wasm-pack build --out-dir wasm --release --target web --features web
+    - name: Make release folder
+      run: |
+        mkdir release
+        cp target/x86_64-unknown-linux-gnu/release/cli release/cli_x86_64-linux
+        # cp target/cli_x86_64-apple/release/cli release/cli_x86_64-apple
+        # cp target/cli_x86_64-windows/release/cli.exe release/cli_x86_64-windows.exe
+        cp -r wasm target/wasm
+      
+    # - name: zip
+    #   uses: montudor/action-zip@v1
+    #   with:
+    #     args: zip -r release.zip release 
+    # - name: Create Release
+    #   id: create_release
+    #   uses: actions/create-release@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+    #   with:
+    #     tag_name: ${{ github.ref }}
+    #     release_name: Release ${{ github.ref }}
+    #     body: |
+    #     draft: false
+    #     prerelease: false
+    - name: Build | Add Artifacts to Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: release/*
+        tag_name: ${{ github.ref }}
+
