@@ -11,12 +11,17 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Build
-      run: cargo build --release --verbose
+      run: cargo build --release --bin cli
     - name: Run tests
       run: cargo test --verbose
+    - name: Download wasm pack
+      uses: jetli/wasm-pack-action@v0.4.0
+      with:
+          version: 'latest'
+    - name: Build wasm
+      run: wasm-pack build --release --target web --features web
+

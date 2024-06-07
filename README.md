@@ -1,18 +1,20 @@
-# Compile for wasm
+# Dither
+
+## Wasm
 
 Following will create js, ts and wasm in the pkg folder (then the wasm example just works)
 ```
 wasm-pack build --release --target web --features web
 ```
 
-# Run on cli
+## Run as cli
 
 Following will convert `image.png` to `image_output.png`
 ```
 cargo run -r -- -i image.png -a sierra 
 ```
 
-# Preview
+## Preview
 <table>
   <tr>
     <td><img src="parrots.webp" alt="Original" width="300"/></td>
