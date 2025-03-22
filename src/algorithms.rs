@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 #[cfg_attr(feature = "web", wasm_bindgen)]
-#[cfg_attr(feature = "strum", derive(strum_macros::EnumIter, strum_macros::Display))]
+#[cfg_attr(feature = "strum", derive(strum_macros::EnumIter, strum_macros::Display, strum_macros::EnumString))]
 pub enum Options {
     FloydSteinberg,
     Aktinson,
