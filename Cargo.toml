@@ -10,11 +10,14 @@ clio = { version = "0.3.5", features = ["clap", "clap-parse"], optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 js-sys = { version = "0.3", optional = true }
 web-sys = { version = "0.3", optional = true }
+strum_macros = { version = "0.27.1", optional = true }
+strum = { version = "0.27.1", optional = true }
 
 [features]
 default = ["cli"]
 cli = ["dep:clap", "dep:clio", "dep:image"]
 web = ["dep:wasm-bindgen", "dep:js-sys", "dep:web-sys"]
+strum = ["dep:strum_macros", "dep:strum"]
 
 [[bin]]
 name = "cli"
