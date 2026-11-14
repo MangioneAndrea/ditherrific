@@ -27,3 +27,5 @@ required-features = ["cli"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+

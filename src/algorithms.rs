@@ -6,7 +6,14 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 #[cfg_attr(feature = "web", wasm_bindgen)]
-#[cfg_attr(feature = "strum", derive(strum_macros::EnumIter, strum_macros::Display, strum_macros::EnumString))]
+#[cfg_attr(
+    feature = "strum",
+    derive(
+        strum_macros::EnumIter,
+        strum_macros::Display,
+        strum_macros::EnumString
+    )
+)]
 pub enum Options {
     FloydSteinberg,
     Aktinson,
@@ -46,35 +53,45 @@ impl Into<ErrorDiffusion> for Options {
     }
 }
 
-pub(crate) fn process(mut img: Image, ed: impl Into<ErrorDiffusion>) -> super::Image {
+pub(crate) fn process(mut img: Image, ed: impl Into<ErrorDiffusion>) -> Image {
     let ed = ed.into();
-    for iy in 0..img.height {
-        for ix in 0..img.width {
-            // Pixel in "center"
-            let target = img
-                .get_pixel(ix as _, iy as _)
-                .expect("target is always there");
 
+    let mut offsets = Vec::new();
+
+    for y in 0..ed.height as usize {
+        for x in 0..ed.width as usize {
+            let weight = ed.get(x, y);
+
+            if weight != 0.0 {
+                offsets.push((
+                    x as isize - ed.center.0 as isize,
+                    y as isize - ed.center.1 as isize,
+                    weight,
+                ));
+            }
+        }
+    }
+
+    let width = img.width as usize;
+    let height = img.height as usize;
+
+    for y in 0..height {
+        for x in 0..width {
+            let index = y * width + x;
+            let target = img.pixels[index];
             let clamped = if target < 0x80 { 0 } else { 0xff };
-            img.set_pixel(ix as _, iy as _, clamped);
+
+            img.pixels[index] = clamped;
 
             let error = target as f32 - clamped as f32;
 
-            for edy in 0..ed.height {
-                for edx in 0..ed.width {
-                    // Diffusion scalar
-                    let error = ed.get(edx as _, edy as _) * error as f32;
+            for &(dx, dy, weight) in &offsets {
+                let px = x as isize + dx;
+                let py = y as isize + dy;
 
-                    if error == 0. {
-                        continue;
-                    }
-
-                    let px = (ix + edx).saturating_sub(ed.center.0) as isize;
-                    let py = (iy + edy).saturating_sub(ed.center.1) as isize;
-
-                    if let Some(p) = img.get_pixel(px, py) {
-                        img.set_pixel(px, py, (p as f32 + error) as u8);
-                    }
+                if px >= 0 && py >= 0 && px < width as isize && py < height as isize {
+                    let index = py as usize * width + px as usize;
+                    img.pixels[index] = (img.pixels[index] as f32 + weight * error) as u8;
                 }
             }
         }
@@ -183,5 +200,62 @@ mod tests {
         let img = super::process(img, ed);
 
         assert_eq!(img.pixels, vec![60, 60, 60]);
+    }
+
+    #[test]
+    #[ignore = "performance benchmark"]
+    fn benchmark_error_diffusion() {
+        use std::hint::black_box;
+        use std::time::Instant;
+
+        let sizes = [(128, 128), (512, 512), (1024, 1024), (1920, 1080)];
+
+        let algorithms = [
+            super::Options::FloydSteinberg,
+            super::Options::Aktinson,
+            super::Options::Burkes,
+            super::Options::Sierra,
+            super::Options::SierraTwoRow,
+            super::Options::SierraLite,
+            super::Options::None,
+        ];
+
+        println!("\n{:<20} {:<15} {:>12}", "Algorithm", "Image", "Time (ms)");
+        println!("{}", "-".repeat(50));
+
+        for (width, height) in sizes {
+            let img = Image {
+                width,
+                height,
+                pixels: (0..height)
+                    .flat_map(|y| {
+                        (0..width).map(move |x| ((x * 31 + y * 17 + (x ^ y)) % 256) as u8)
+                    })
+                    .collect(),
+            };
+
+            for algorithm in algorithms {
+                let iterations = 5;
+
+                // Warmup
+                black_box(super::process(img.clone(), algorithm));
+
+                let start = Instant::now();
+
+                for _ in 0..iterations {
+                    black_box(super::process(black_box(img.clone()), black_box(algorithm)));
+                }
+
+                let elapsed = start.elapsed();
+                let per_iteration = elapsed.as_secs_f64() * 1000.0 / iterations as f64;
+
+                println!(
+                    "{:<20} {:<15} {:>10.3}",
+                    format!("{algorithm:?}"),
+                    format!("{width}x{height}"),
+                    per_iteration,
+                );
+            }
+        }
     }
 }
